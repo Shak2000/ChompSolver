@@ -1,0 +1,212 @@
+/* Custom CSS for Chomp Solver */
+
+/* General Body Styling */
+body {
+    font-family: 'Inter', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #f0f4f8, #d9e2ec); /* Subtle gradient background */
+}
+
+/* Main Container Styling */
+.bg-white {
+    background-color: #ffffff;
+    border-radius: 1.5rem; /* More rounded corners */
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); /* Deeper shadow */
+    padding: 2.5rem;
+    max-width: 90%; /* Responsive width */
+    width: 100%;
+    box-sizing: border-box; /* Include padding in width */
+}
+
+/* Heading Styling */
+h1 {
+    color: #2d3748; /* Darker text for better contrast */
+    font-size: 2.5rem; /* Larger font size */
+    margin-bottom: 1.5rem;
+    text-align: center;
+}
+
+/* Input Fields */
+input[type="number"] {
+    border: 1px solid #cbd5e0;
+    border-radius: 0.5rem;
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    transition: all 0.2s ease-in-out;
+}
+
+input[type="number"]:focus {
+    border-color: #4299e1;
+    box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.5); /* Blue focus ring */
+    outline: none;
+}
+
+/* Buttons */
+button {
+    font-weight: 600; /* Semi-bold */
+    padding: 0.8rem 1.5rem;
+    border-radius: 0.75rem; /* More rounded buttons */
+    transition: all 0.2s ease-in-out;
+    cursor: pointer;
+    text-align: center;
+    display: inline-flex; /* For centering text */
+    justify-content: center;
+    align-items: center;
+}
+
+button:hover {
+    transform: translateY(-2px); /* Slight lift effect */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Subtle shadow on hover */
+}
+
+/* Specific Button Colors (Tailwind classes will handle most of this, but for emphasis) */
+#start-game-btn {
+    background-color: #3b82f6; /* Blue */
+}
+#start-game-btn:hover {
+    background-color: #2563eb;
+}
+
+#computer-move-btn {
+    background-color: #10b981; /* Green */
+}
+#computer-move-btn:hover {
+    background-color: #059669;
+}
+
+#undo-move-btn {
+    background-color: #f59e0b; /* Yellow/Orange */
+}
+#undo-move-btn:hover {
+    background-color: #d97706;
+}
+
+#new-game-btn {
+    background-color: #8b5cf6; /* Purple */
+}
+#new-game-btn:hover {
+    background-color: #7c3aed;
+}
+
+#quit-game-btn {
+    background-color: #ef4444; /* Red */
+}
+#quit-game-btn:hover {
+    background-color: #dc2626;
+}
+
+/* Board Display */
+#board-display {
+    display: grid;
+    gap: 2px; /* Small gap between cells */
+    background-color: #cbd5e0; /* Border color for the grid lines */
+    padding: 2px; /* Padding to show the border color as grid lines */
+    border: 2px solid #a0aec0; /* Outer border */
+    border-radius: 0.5rem;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.06); /* Inner shadow for depth */
+}
+
+.board-cell {
+    width: 40px; /* Fixed size for cells */
+    height: 40px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.2rem;
+    font-weight: bold;
+    border-radius: 0.25rem; /* Slightly rounded cells */
+    cursor: pointer;
+    transition: background-color 0.15s ease-in-out, transform 0.1s ease-in-out;
+}
+
+.board-cell.chocolate {
+    background-color: #8B4513; /* Chocolate brown */
+    color: white;
+    box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.2); /* Inner shadow for chocolate texture */
+}
+
+.board-cell.chocolate:hover {
+    background-color: #a0522d; /* Lighter brown on hover */
+    transform: scale(1.02); /* Slight scale up on hover */
+}
+
+.board-cell.removed {
+    background-color: #e2e8f0; /* Light gray for removed pieces */
+    color: #a0aec0;
+    cursor: default;
+}
+
+.board-cell.poison {
+    background-color: #dc2626; /* Red for poison */
+    color: white;
+    font-size: 1.5rem; /* Larger 'P' */
+    box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.4); /* Stronger inner shadow for poison */
+    cursor: default;
+}
+
+/* Game Messages */
+#game-messages {
+    min-height: 2.5rem; /* Ensure space for messages */
+    color: #4a5568;
+    text-align: center;
+}
+
+/* Modal Styling */
+#message-modal {
+    z-index: 1000; /* Ensure modal is on top */
+}
+
+#message-modal > div {
+    background-color: #ffffff;
+    border-radius: 1rem;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    padding: 2rem;
+}
+
+#modal-title {
+    color: #2d3748;
+}
+
+#modal-message {
+    color: #4a5568;
+}
+
+#modal-close-btn {
+    background-color: #3b82f6;
+}
+#modal-close-btn:hover {
+    background-color: #2563eb;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 640px) {
+    .bg-white {
+        padding: 1.5rem;
+    }
+
+    h1 {
+        font-size: 2rem;
+    }
+
+    .board-cell {
+        width: 35px; /* Smaller cells on small screens */
+        height: 35px;
+        font-size: 1rem;
+    }
+
+    .board-cell.poison {
+        font-size: 1.2rem;
+    }
+
+    .grid-cols-2 {
+        grid-template-columns: 1fr; /* Stack buttons on small screens */
+    }
+    .col-span-2 {
+        grid-column: span 1 / span 1;
+    }
+}

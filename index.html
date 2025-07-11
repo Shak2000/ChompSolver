@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chomp Solver</title>
+    <link rel="stylesheet" href="/styles.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen font-inter p-4">
+    <div class="bg-white rounded-xl shadow-2xl p-8 max-w-4xl w-full flex flex-col items-center">
+        <h1 class="text-4xl font-bold text-gray-800 mb-6">Chomp Solver</h1>
+
+        <!-- Game Setup Section -->
+        <div id="game-setup" class="flex flex-col items-center space-y-4 mb-8">
+            <div class="flex space-x-4">
+                <!-- Changed placeholder text -->
+                <input type="number" id="rows-input" placeholder="Rows" class="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 w-40 text-center">
+                <input type="number" id="cols-input" placeholder="Columns" class="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 w-40 text-center">
+            </div>
+            <button id="start-game-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105">
+                Start New Game
+            </button>
+        </div>
+
+        <!-- Game Board and Controls -->
+        <div id="game-container" class="hidden w-full flex flex-col items-center">
+            <div id="board-display" class="mb-6 border-2 border-gray-400 rounded-lg overflow-hidden">
+                <!-- Board will be rendered here by JavaScript -->
+            </div>
+
+            <div id="game-messages" class="text-lg font-semibold text-gray-700 mb-6 min-h-[2rem] text-center">
+                <!-- Game messages will appear here -->
+            </div>
+
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 w-full max-w-md">
+                <button id="computer-move-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105">
+                    Computer Move
+                </button>
+                <button id="undo-move-btn" class="bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-3 px-4 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105">
+                    Undo Move
+                </button>
+                <button id="new-game-btn" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-4 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105">
+                    New Game
+                </button>
+                <button id="quit-game-btn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105 col-span-2 sm:col-span-1">
+                    Quit
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Message Box Modal -->
+    <div id="message-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center hidden">
+        <div class="bg-white rounded-lg shadow-xl p-8 max-w-sm w-full text-center">
+            <h3 id="modal-title" class="text-2xl font-bold mb-4 text-gray-800"></h3>
+            <p id="modal-message" class="text-gray-700 mb-6"></p>
+            <button id="modal-close-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-5 rounded-lg shadow-md transition duration-300 ease-in-out">
+                OK
+            </button>
+        </div>
+    </div>
+
+    <script src="/script.js"></script>
+</body>
+</html>
