@@ -10,6 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const undoMoveBtn = document.getElementById('undo-move-btn');
     const newGameBtn = document.getElementById('new-game-btn');
     const quitGameBtn = document.getElementById('quit-game-btn');
+    const currentTurnDisplay = document.getElementById('current-turn-display'); // New element
 
     // Message Modal Elements
     const messageModal = document.getElementById('message-modal');
@@ -20,25 +21,34 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentBoard = [];
     let boardRows = 0;
     let boardCols = 0;
+    let currentPlayer = "Player 1"; // Frontend tracking of current player
+    let gameWinner = null; // Frontend tracking of winner
 
     // Function to show a custom message box
-    function showMessageBox(title, message) {
+    function showMessageBox(title, message, isGameOver = false) {
         modalTitle.textContent = title;
         modalMessage.textContent = message;
         messageModal.classList.remove('hidden');
+        if (isGameOver) {
+            modalCloseBtn.textContent = 'New Game'; // Change button text for game over
+            modalCloseBtn.onclick = () => {
+                messageModal.classList.add('hidden');
+                newGameBtn.click(); // Trigger new game
+            };
+        } else {
+            modalCloseBtn.textContent = 'OK';
+            modalCloseBtn.onclick = () => {
+                messageModal.classList.add('hidden');
+            };
+        }
     }
-
-    // Function to hide the custom message box
-    modalCloseBtn.addEventListener('click', () => {
-        messageModal.classList.add('hidden');
-    });
 
     // Helper to fetch data from API
     async function fetchData(url, method = 'GET', body = null) {
         try {
             const options = { method };
             if (body) {
-                options.headers = { 'Content-Type': 'application/x-www-form-urlencoded' }; // Ensure correct content type
+                options.headers = { 'Content-Type': 'application/x-www-form-urlencoded' };
                 options.body = new URLSearchParams(body);
             }
             const response = await fetch(url, options);
@@ -46,7 +56,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const errorText = await response.text();
                 throw new Error(`HTTP error! Status: ${response.status}, Message: ${errorText}`);
             }
-            return response.json(); // Expect JSON response
+            return response.json();
         } catch (error) {
             console.error('Fetch error:', error);
             showMessageBox('Error', `Failed to communicate with the server: ${error.message}. Please try again.`);
@@ -66,7 +76,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 cell.dataset.row = r;
                 cell.dataset.col = c;
 
-                // Ensure currentBoard[r] exists before accessing currentBoard[r][c]
                 if (currentBoard[r] && currentBoard[r][c]) {
                     if (r === 0 && c === 0) {
                         cell.classList.add('poison');
@@ -75,25 +84,29 @@ document.addEventListener('DOMContentLoaded', () => {
                         cell.classList.add('chocolate');
                         cell.textContent = 'C'; // Mark chocolate square
                     }
-                    cell.addEventListener('click', handleCellClick);
+                    // Only add click listener if game is not over and it's a chocolate piece
+                    if (!gameWinner) {
+                        cell.addEventListener('click', handleCellClick);
+                    }
                 } else {
                     cell.classList.add('removed');
                 }
                 boardDisplay.appendChild(cell);
             }
         }
+        updateTurnDisplay(); // Update turn display after rendering board
     }
 
-    // Function to fetch and update the board state from the backend
-    async function fetchAndUpdateBoard() {
-        const data = await fetchData('/get_board_state', 'GET');
-        if (data && data.board) {
-            currentBoard = data.board;
-            boardRows = data.rows;
-            boardCols = data.cols;
-            renderBoard();
+    // Update the turn display
+    function updateTurnDisplay() {
+        if (gameWinner) {
+            currentTurnDisplay.textContent = `Game Over! Winner: ${gameWinner}!`;
+            currentTurnDisplay.classList.add('text-green-700'); // Highlight winner
+            currentTurnDisplay.classList.remove('text-gray-800');
         } else {
-            showMessageBox('Board Error', 'Failed to fetch current board state.');
+            currentTurnDisplay.textContent = `Current Turn: ${currentPlayer}`;
+            currentTurnDisplay.classList.remove('text-green-700');
+            currentTurnDisplay.classList.add('text-gray-800');
         }
     }
 
@@ -112,12 +125,15 @@ document.addEventListener('DOMContentLoaded', () => {
         if (result && result.success) {
             boardRows = result.rows;
             boardCols = result.cols;
-            currentBoard = result.board; // Get the initial board state from the response
+            currentBoard = result.board;
+            currentPlayer = result.current_player; // Get current player from backend
+            gameWinner = result.winner; // Get winner (should be null initially)
+
             gameSetupDiv.classList.add('hidden');
             gameContainerDiv.classList.remove('hidden');
             renderBoard();
             gameMessages.textContent = 'Game started! Your turn.';
-            enableGameControls(); // Ensure controls are enabled for a new game
+            enableGameControls();
         } else {
             showMessageBox('Game Error', 'Failed to start the game. Please check server logs.');
         }
@@ -136,15 +152,17 @@ document.addEventListener('DOMContentLoaded', () => {
         const result = await fetchData(`/remove?x=${col}&y=${row}`, 'POST');
 
         if (result && result.success) {
-            currentBoard = result.board; // Update board from response
+            currentBoard = result.board;
+            currentPlayer = result.current_player; // Update current player
+            gameWinner = result.winner; // Check for winner
+
             renderBoard();
-            const lost = await fetchData('/lost', 'POST'); // Check if game is lost after player's move
-            if (lost) {
-                showMessageBox('Game Over!', 'All chocolate squares have been eaten! The poison square (0,0) remains. You WIN!');
-                gameMessages.textContent = 'You WIN!';
+            if (gameWinner) {
+                showMessageBox('Game Over!', `All chocolate squares have been eaten! The poison square (0,0) remains. ${gameWinner} WINS!`, true);
+                gameMessages.textContent = `${gameWinner} WINS!`;
                 disableGameControls();
             } else {
-                gameMessages.textContent = `You removed (${col}, ${row}). Computer's turn.`;
+                gameMessages.textContent = `You removed (${col}, ${row}). ${currentPlayer}'s turn.`;
             }
         } else {
             showMessageBox('Invalid Move', 'That square is already removed or out of bounds. Try again.');
@@ -157,20 +175,33 @@ document.addEventListener('DOMContentLoaded', () => {
         const result = await fetchData('/computer_move', 'POST');
 
         if (result && result.success) {
-            currentBoard = result.board; // Update board from response
+            currentBoard = result.board;
+            currentPlayer = result.current_player; // Update current player
+            gameWinner = result.winner; // Check for winner
+
             renderBoard();
-            const lost = await fetchData('/lost', 'POST');
-            if (lost) {
-                showMessageBox('Game Over!', 'The computer has left only the poison square. You WIN!');
-                gameMessages.textContent = 'You WIN!';
+            if (gameWinner) {
+                showMessageBox('Game Over!', `The computer has left only the poison square. ${gameWinner} WINS!`, true);
+                gameMessages.textContent = `${gameWinner} WINS!`;
                 disableGameControls();
             } else {
-                gameMessages.textContent = "Computer made a move. Your turn.";
+                gameMessages.textContent = `Computer made a move. ${currentPlayer}'s turn.`;
             }
         } else {
-            showMessageBox('Computer Move Error', 'Computer could not make a move (only poison square remains). You WIN!');
-            gameMessages.textContent = 'You WIN!';
-            disableGameControls();
+            // Computer could not make a move (only poison square remains), meaning current player wins
+            const data = await fetchData('/get_board_state', 'GET'); // Fetch state to get current player
+            if (data) {
+                 gameWinner = data.current_player; // The current player wins if computer can't move
+                 currentBoard = data.board;
+                 boardRows = data.rows;
+                 boardCols = data.cols;
+                 renderBoard(); // Re-render to show final board
+                 showMessageBox('Game Over!', `Computer could not make a move (only poison square remains). ${gameWinner} WINS!`, true);
+                 gameMessages.textContent = `${gameWinner} WINS!`;
+                 disableGameControls();
+            } else {
+                showMessageBox('Error', 'Failed to determine game state after computer move failure.');
+            }
         }
     });
 
@@ -178,9 +209,12 @@ document.addEventListener('DOMContentLoaded', () => {
     undoMoveBtn.addEventListener('click', async () => {
         const result = await fetchData('/undo', 'POST');
         if (result && result.success) {
-            currentBoard = result.board; // Update board from response
+            currentBoard = result.board;
+            currentPlayer = result.current_player; // Revert to previous player
+            gameWinner = result.winner; // Clear winner on undo
             renderBoard();
             gameMessages.textContent = 'Move undone. Your turn.';
+            enableGameControls(); // Re-enable controls after undo
         } else {
             showMessageBox('Undo Error', 'No moves to undo.');
         }
@@ -193,27 +227,32 @@ document.addEventListener('DOMContentLoaded', () => {
         rowsInput.value = '';
         colsInput.value = '';
         gameMessages.textContent = '';
-        enableGameControls(); // Re-enable controls for a new game
+        gameWinner = null; // Clear winner
+        currentPlayer = "Player 1"; // Reset player
+        enableGameControls(); // Ensure controls are enabled for a new game
+        updateTurnDisplay(); // Reset turn display
     });
 
     // Handle quit game button
     quitGameBtn.addEventListener('click', () => {
         showMessageBox('Goodbye!', 'Thanks for playing Chomp Solver!');
-        disableGameControls(); // Disable controls immediately
+        disableGameControls();
         setTimeout(() => {
             gameContainerDiv.classList.add('hidden');
             gameSetupDiv.classList.remove('hidden');
             rowsInput.value = '';
             colsInput.value = '';
             gameMessages.textContent = '';
-        }, 2000); // Go back to setup after 2 seconds
+            gameWinner = null;
+            currentPlayer = "Player 1";
+            updateTurnDisplay();
+        }, 2000);
     });
 
     // Function to disable game controls after game ends
     function disableGameControls() {
         computerMoveBtn.disabled = true;
         undoMoveBtn.disabled = true;
-        // The board cells should also be unclickable
         boardDisplay.querySelectorAll('.board-cell.chocolate').forEach(cell => {
             cell.removeEventListener('click', handleCellClick);
             cell.style.cursor = 'default';
@@ -224,10 +263,11 @@ document.addEventListener('DOMContentLoaded', () => {
     function enableGameControls() {
         computerMoveBtn.disabled = false;
         undoMoveBtn.disabled = false;
-        // Re-attach click listeners to chocolate cells
         boardDisplay.querySelectorAll('.board-cell.chocolate').forEach(cell => {
             cell.addEventListener('click', handleCellClick);
             cell.style.cursor = 'pointer';
         });
     }
+
+    updateTurnDisplay(); // Initialize turn display even before game starts
 });

@@ -15,7 +15,6 @@
         <!-- Game Setup Section -->
         <div id="game-setup" class="flex flex-col items-center space-y-4 mb-8">
             <div class="flex space-x-4">
-                <!-- Changed placeholder text -->
                 <input type="number" id="rows-input" placeholder="Rows" class="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 w-40 text-center">
                 <input type="number" id="cols-input" placeholder="Columns" class="p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 w-40 text-center">
             </div>
@@ -26,6 +25,9 @@
 
         <!-- Game Board and Controls -->
         <div id="game-container" class="hidden w-full flex flex-col items-center">
+            <div id="current-turn-display" class="text-xl font-bold text-gray-800 mb-4">
+                <!-- Current turn will be displayed here -->
+            </div>
             <div id="board-display" class="mb-6 border-2 border-gray-400 rounded-lg overflow-hidden">
                 <!-- Board will be rendered here by JavaScript -->
             </div>

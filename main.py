@@ -8,6 +8,8 @@ class Game:
         self.cols = 0
         self.rem = 0
         self.history = []
+        self.current_player = "Player 1"  # New: Track current player
+        self.winner = None  # New: Track winner
 
     def start(self, rows, cols):
         """Initializes a new Chomp game board."""
@@ -19,6 +21,8 @@ class Game:
         self.board = [[True for _ in range(cols)] for _ in range(rows)]
         self.rem = self.rows * self.cols
         self.history = []
+        self.current_player = "Player 1"  # Reset to Player 1 for new game
+        self.winner = None  # Reset winner
         return True
 
     def remove(self, x, y):
@@ -34,13 +38,19 @@ class Game:
             return False
 
         current_board_copy = [[self.board[i][j] for j in range(self.cols)] for i in range(self.rows)]
-        self.history.append(current_board_copy)
+        self.history.append((current_board_copy, self.current_player))  # Store board and current player
 
         for i in range(y, self.rows):
             for j in range(x, self.cols):
                 if self.board[i][j]:
                     self.board[i][j] = False
                     self.rem -= 1
+
+        # After a successful move, check for win condition and switch player
+        if self.lost():
+            self.winner = self.current_player  # The player who made the last move wins
+        else:
+            self.switch_player()  # Switch player only if game is not over
         return True
 
     def undo(self):
@@ -52,20 +62,21 @@ class Game:
             print("No moves to undo.")
             return False
 
-        previous_board = self.history.pop()
+        previous_board, previous_player = self.history.pop()  # Retrieve previous board and player
         self.board = previous_board
         self.rem = sum(1 for row in self.board for piece in row if piece)
+        self.current_player = previous_player  # Revert to the player who was about to move
+        self.winner = None  # Clear winner on undo
         print("Move undone.")
         return True
 
     def lost(self):
         """Checks if the game is lost (only the poison square remains)."""
         # The game is lost if only the poison square (0,0) remains and it's still True
-        # This condition means the player who made the last move left only (0,0)
         return self.rem == 1 and self.board[0][0]
 
     def display_board(self):
-        """Prints the current state of the Chomp board."""
+        """Prints the current state of the Chomp board (for console)."""
         print("\nCurrent Board:")
         print("   " + " ".join(str(j) for j in range(self.cols)))
         print("  +" + "--" * self.cols)
@@ -74,13 +85,16 @@ class Game:
             for j in range(self.cols):
                 if self.board[i][j]:
                     if i == 0 and j == 0:
-                        row_str += "X "  # 'X' for poison square
+                        row_str += "P "  # 'P' for Poison square
                     else:
-                        row_str += "C "  # 'C' for existing chocolate
+                        row_str += "C "  # 'C' for existing Chocolate
                 else:
                     row_str += "  "  # ' ' for removed chocolate
             print(row_str)
         print(f"Remaining pieces: {self.rem}\n")
+        print(f"Current Turn: {self.current_player}")
+        if self.winner:
+            print(f"Winner: {self.winner}!")
 
     def get_valid_moves(self):
         """Returns a list of (x, y) tuples for all currently valid moves."""
@@ -94,7 +108,7 @@ class Game:
 
     def is_1xn_or_nx1(self, temp_board, temp_rows, temp_cols):
         """
-        Checks if the given temporary board is a 1xn or nx1 shape (excluding 1x1).
+        Checks if the given temporary board is a 1xN or Nx1 shape (excluding 1x1).
         This is a simplified check for the computer's strategy.
         """
         active_rows = [any(temp_board[r]) for r in range(temp_rows)]
@@ -103,9 +117,7 @@ class Game:
         num_active_rows = sum(active_rows)
         num_active_cols = sum(active_cols)
 
-        # If only the poison square remains, it's not a "bad shape" to avoid for the computer,
-        # as it signifies the end of the game.
-        if self.rem == 1 and self.board[0][0]:
+        if self.rem == 1 and self.board[0][0]:  # If only poison square remains
             return False
 
         if num_active_rows == 1 and num_active_cols > 1:
@@ -123,21 +135,17 @@ class Game:
         """
         valid_moves = self.get_valid_moves()
         if not valid_moves:
-            # If no valid moves are left (meaning only poison square remains)
             return False
 
         best_moves = []
         other_moves = []
 
         for move_x, move_y in valid_moves:
-            # Create a temporary game state to simulate the move
             temp_game = Game()
             temp_game.start(self.rows, self.cols)
             temp_game.board = [[self.board[r][c] for c in range(self.cols)] for r in range(self.rows)]
             temp_game.rem = self.rem
 
-            # Simulate the removal (the temp_game.remove method already prevents (0,0))
-            # We don't need to check (0,0) here again because get_valid_moves already excludes it.
             for i in range(move_y, temp_game.rows):
                 for j in range(move_x, temp_game.cols):
                     if temp_game.board[i][j]:
@@ -152,21 +160,28 @@ class Game:
             else:
                 other_moves.append((move_x, move_y))
 
+        chosen_move = None
         if best_moves:
             chosen_move = random.choice(best_moves)
-            print(f"Computer chooses to remove ({chosen_move[0]}, {chosen_move[1]})")
-            return self.remove(chosen_move[0], chosen_move[1])
         elif other_moves:
             chosen_move = random.choice(other_moves)
+
+        if chosen_move:
             print(f"Computer chooses to remove ({chosen_move[0]}, {chosen_move[1]})")
-            return self.remove(chosen_move[0], chosen_move[1])
+            # Perform the actual move and then switch player
+            success = self.remove(chosen_move[0], chosen_move[1])
+            return success
         else:
-            # This case means get_valid_moves returned moves, but none fit best_moves or other_moves criteria
-            # which implies only the poison square is left.
             print("Computer has no valid moves to make (only poison square remains).")
             return False
 
+    def switch_player(self):
+        """Switches the current player."""
+        self.current_player = "Player 2" if self.current_player == "Player 1" else "Player 1"
 
+
+# The main function for console interaction is no longer strictly needed for the web app,
+# but can be kept for direct console testing.
 def main():
     print("Welcome to the Chomp Solver!")
     game = Game()
@@ -191,9 +206,8 @@ def main():
 
             while True:
                 game.display_board()
-                if game.lost():
-                    print("All chocolate squares have been eaten! The poison square (0,0) remains.")
-                    print("The player who made the last move (leaving only the poison square) wins!")
+                if game.winner:  # Check for winner after displaying board
+                    print(f"Game Over! {game.winner} wins!")
                     break
 
                 print("\nTurn Options:")
@@ -211,7 +225,7 @@ def main():
                             y = int(input("Enter row (y) to remove: "))
                             if x == 0 and y == 0:
                                 print("You cannot remove the poison square (0,0)!")
-                                continue  # Ask for input again
+                                continue
                             if game.remove(x, y):
                                 print(f"You removed ({x}, {y}).")
                                 break
@@ -222,11 +236,11 @@ def main():
                 elif turn_choice == '2':
                     print("Computer is making a move...")
                     if not game.computer_move():
-                        print("Computer could not make a move (only poison square remains).")
                         # If computer_move returns False, it means there are no valid non-poison moves.
                         # The game ends, and the current player (who forced this state) wins.
-                        print("The computer has left only the poison square. You win!")
-                        break
+                        game.winner = game.current_player  # Set the current player as winner
+                        print("The computer has no valid moves left. You win!")
+                        break  # Break out of current game loop
                 elif turn_choice == '3':
                     game.undo()
                 elif turn_choice == '4':
